@@ -229,6 +229,7 @@
 		F437405F9F32C7DEFCA38C11 /* LexIndent.cxx in Sources */ = {isa = PBXBuildFile; fileRef = 282E41F3B9E2BFEDD6A05BE7 /* LexIndent.cxx */; };
 		FDC7442CAD70B9A67EF1639D /* LexSAS.cxx in Sources */ = {isa = PBXBuildFile; fileRef = A95147A1AB7CADB00DAFE724 /* LexSAS.cxx */; };
 		5F804AA6B60FE695863A39FE /* LexStata.cxx in Sources */ = {isa = PBXBuildFile; fileRef = 7623427695416AB1270EE023 /* LexStata.cxx */; };
+		13124CD580D0A661EBA4FDCF /* LexMBox.cxx in Sources */ = {isa = PBXBuildFile; fileRef = 461E462BAE7AF5CC15F885D3 /* LexMBox.cxx */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -461,6 +462,7 @@
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		A95147A1AB7CADB00DAFE724 /* LexSAS.cxx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LexSAS.cxx; path = ../../lexers/LexSAS.cxx; sourceTree = SOURCE_ROOT; };
 		7623427695416AB1270EE023 /* LexStata.cxx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LexStata.cxx; path = ../../lexers/LexStata.cxx; sourceTree = SOURCE_ROOT; };
+		461E462BAE7AF5CC15F885D3 /* LexMBox.cxx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LexMBox.cxx; path = ../../lexers/LexMBox.cxx; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -616,6 +618,7 @@
 				114B6EE411FA7526004FB6AB /* LexMarkdown.cxx */,
 				114B6EE511FA7526004FB6AB /* LexMatlab.cxx */,
 				29B042978C1F93EF42F9E4AB /* LexMaxima.cxx */,
+				461E462BAE7AF5CC15F885D3 /* LexMBox.cxx */,
 				114B6EE611FA7526004FB6AB /* LexMetapost.cxx */,
 				114B6EE711FA7526004FB6AB /* LexMMIXAL.cxx */,
 				11BB124C12FF9C1300F6BCF7 /* LexModula.cxx */,
@@ -1120,6 +1123,7 @@
 				3D994BD7A5EAC4FA5B3CFBDF /* LexMaxima.cxx in Sources */,
 				FDC7442CAD70B9A67EF1639D /* LexSAS.cxx in Sources */,
 				5F804AA6B60FE695863A39FE /* LexStata.cxx in Sources */,
+				13124CD580D0A661EBA4FDCF /* LexMBox.cxx in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

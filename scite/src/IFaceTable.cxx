@@ -1295,6 +1295,9 @@ static IFaceConstant ifaceConstants[] = {
 	{"SCE_MAXIMA_STRING",4},
 	{"SCE_MAXIMA_UNKNOWN",7},
 	{"SCE_MAXIMA_VARIABLE",6},
+	{"SCE_MBOX_COMMENT",1},
+	{"SCE_MBOX_DEFAULT",0},
+	{"SCE_MBOX_IDENTIFIER",2},
 	{"SCE_METAPOST_COMMAND",4},
 	{"SCE_METAPOST_DEFAULT",0},
 	{"SCE_METAPOST_EXTRA",6},
@@ -2543,6 +2546,7 @@ static IFaceConstant ifaceConstants[] = {
 	{"SCLEX_MARKDOWN",98},
 	{"SCLEX_MATLAB",32},
 	{"SCLEX_MAXIMA",123},
+	{"SCLEX_MBOX",126},
 	{"SCLEX_METAPOST",50},
 	{"SCLEX_MMIXAL",44},
 	{"SCLEX_MODULA",101},
@@ -3411,7 +3415,7 @@ static IFaceProperty ifaceProperties[] = {
 
 enum {
 	ifaceFunctionCount = 307,
-	ifaceConstantCount = 2740,
+	ifaceConstantCount = 2744,
 	ifacePropertyCount = 230
 };
 

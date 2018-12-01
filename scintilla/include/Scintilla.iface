@@ -2942,6 +2942,7 @@ val SCLEX_INDENT=122
 val SCLEX_MAXIMA=123
 val SCLEX_STATA=124
 val SCLEX_SAS=125
+val SCLEX_MBOX=126
 
 # When a lexer specifies its language as SCLEX_AUTOMATIC it receives a
 # value assigned in sequence from SCLEX_AUTOMATIC+1.
@@ -4895,6 +4896,11 @@ val SCE_SAS_MACRO_KEYWORD=12
 val SCE_SAS_BLOCK_KEYWORD=13
 val SCE_SAS_MACRO_FUNCTION=14
 val SCE_SAS_STATEMENT=15
+# Lexical states for SCLEX_MBOX
+lex MBOX=SCLEX_MBOX SCE_MBOX_
+val SCE_MBOX_DEFAULT=0
+val SCE_MBOX_COMMENT=1
+val SCE_MBOX_IDENTIFIER=2
 
 # Events
 
