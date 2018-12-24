@@ -32,6 +32,9 @@ static const char *const MBoxWordlistDesc[] = {
     0
 };
 
+std::map<Sci_Position, char> dataMap;
+std::map<Sci_Position, char> stateMap;
+
 class LexerMBox : public ILexer4 {
 public:
     LexerMBox() {
@@ -144,66 +147,26 @@ public:
 
 };
 
-bool IsFromLine(Sci_Position currentLine, LexAccessor &styler) {
-    std::string line;
-    Sci_Position startPos = styler.LineStart(currentLine);
-    Sci_Position docLines = styler.GetLine(styler.Length() - 1);
-    Sci_Position endPos;
-    if ( docLines == currentLine ) {
-        endPos = styler.Length();
-    } else {
-        endPos = styler.LineStart(currentLine + 1) - 1;
-    }
-    Sci_Position currentPos = startPos;
-    while (currentPos < endPos) {
-       line += static_cast<char>(styler.SafeGetCharAt(currentPos));
-       currentPos += 1;
-    }
+
+bool IsFromLine(std::string line) {
+
     std::string fromKeywordRegex("\\s*From\\s+");
     std::string fromSourceRegex("\\s*(\\S+|(\".*\")+)\\s*");
     std::string fromDateRegex("\\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+([0-2][1-9]|3[0-1])\\s*([0-1][0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])\\s*\\d{4}\\s*");
-
     std::regex r(fromKeywordRegex+fromSourceRegex+fromDateRegex);
     return std::regex_match(line, r);
 }
 
-bool IsDateLine(Sci_Position currentLine, LexAccessor &styler) {
-    std::string line;
-    Sci_Position startPos = styler.LineStart(currentLine);
-    Sci_Position docLines = styler.GetLine(styler.Length() - 1);
-    Sci_Position endPos;
-    if ( docLines == currentLine ) {
-        endPos = styler.Length();
-    } else {
-        endPos = styler.LineStart(currentLine + 1) - 1;
-    }
-    Sci_Position currentPos = startPos;
-    while (currentPos < endPos) {
-       line += static_cast<char>(styler.SafeGetCharAt(currentPos));
-       currentPos += 1;
-    }
+bool IsDateLine(std::string line) {
+
     std::string dateKeywordRegex("\\s*Date:\\s+");
     std::string dateDateRegex("\\s*(0[1-9]|1[0-2])/([0-2][0-9]|3[0-1])/(\\d{2})\\s+([0-1][0-9]|2[0-4]):([0-5][0-9])\\s+(am|pm)\\s*");
-
     std::regex r(dateKeywordRegex+dateDateRegex);
     return std::regex_match(line, r);
 }
 
-bool IsSubjectLine(Sci_Position currentLine, LexAccessor &styler) {
-    std::string line;
-    Sci_Position startPos = styler.LineStart(currentLine);
-    Sci_Position docLines = styler.GetLine(styler.Length() - 1);
-    Sci_Position endPos;
-    if ( docLines == currentLine ) {
-        endPos = styler.Length();
-    } else {
-        endPos = styler.LineStart(currentLine + 1) - 1;
-    }
-    Sci_Position currentPos = startPos;
-    while (currentPos < endPos) {
-       line += static_cast<char>(styler.SafeGetCharAt(currentPos));
-       currentPos += 1;
-    }
+bool IsSubjectLine(std::string line) {
+
     std::string subjectKeywordRegex("\\s*Subject:\\s+");
     std::string subjectTextRegex("\\s*.*?\\s*");
 
@@ -211,80 +174,190 @@ bool IsSubjectLine(Sci_Position currentLine, LexAccessor &styler) {
     return std::regex_match(line, r);
 }
 
+bool IsCustomKeywordLine(std::string line) {
+
+    std::string customKeywordRegex("^[A-Za-z]+:.*?\\s+");
+
+    std::regex r(customKeywordRegex);
+    return std::regex_match(line, r);
+}
+
+void ProcessLines(Sci_PositionU startPos, LexAccessor &styler) {
+
+    std::string lineBuffer;
+    Sci_Position currentPos = startPos;
+    Sci_Position endPos = styler.Length();
+    Sci_Position currentLine = styler.GetLine(startPos);
+    while(currentPos < endPos) {
+        char c = static_cast<char>(styler.SafeGetCharAt(currentPos++));
+        
+        lineBuffer += c;
+
+        if (c == '\n') {
+            
+            if (lineBuffer.substr(0,5) == "From " && IsFromLine(lineBuffer)) {
+                if (dataMap.find(currentLine) == dataMap.end()) {
+                        dataMap.insert(std::make_pair(currentLine, SCE_MBOX_FROM)); 
+                }
+                else {
+                    dataMap[currentLine] = SCE_MBOX_FROM;
+                }
+            }
+            else if (lineBuffer.substr(0,5) == "Date:" && IsDateLine(lineBuffer)) {
+                
+                if (dataMap.find(currentLine) == dataMap.end()) {
+                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_DATE)); 
+                }
+                else {
+                    dataMap[currentLine] = SCE_MBOX_DATE;
+                }
+            }
+            else if (lineBuffer.substr(0,8) == "Subject:" && IsSubjectLine(lineBuffer)) {
+                if (dataMap.find(currentLine) == dataMap.end()) {
+                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_SUBJECT)); 
+                }
+                else {
+                    dataMap[currentLine] = SCE_MBOX_SUBJECT;
+                }
+            }
+            else {
+                if (dataMap.find(currentLine) == dataMap.end()) {
+                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_DEFAULT)); 
+                }
+                else {
+                    dataMap[currentLine] = SCE_MBOX_DEFAULT;
+                }
+            }
+
+            lineBuffer.clear();
+            currentLine++;
+        } 
+    }
+
+}
+
+void ProcessStates(void) {
+    for (auto data = dataMap.begin(); data != dataMap.end(); data++) {
+
+        if (stateMap.find(data->first) == stateMap.end()) {
+            stateMap.insert(std::make_pair(data->first, data->second)); 
+        }
+        else {
+            stateMap[data->first] = data->second;
+        }
+
+        if (data->second != SCE_MBOX_DEFAULT) {
+            Sci_Position begin = data->first;
+            Sci_Position end = data->first;
+            while (data != dataMap.end() && data->second != SCE_MBOX_DEFAULT) {
+                end = data->first;
+                data++;
+            }
+            data--;
+
+            if (dataMap[begin] != SCE_MBOX_FROM) {
+                for (Sci_Position i = begin; i <= end; i++) {
+                    if (stateMap.find(i) == stateMap.end()) {
+                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
+                    }
+                    else {
+                        stateMap[i] = SCE_MBOX_DEFAULT;
+                    }
+                } 
+                if (data != dataMap.end())  {
+                    continue;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if (dataMap[begin+1] != SCE_MBOX_DATE) {
+                for (Sci_Position i = begin; i <= end; i++) {
+                    if (stateMap.find(i) == stateMap.end()) {
+                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
+                    }
+                    else {
+                        stateMap[i] = SCE_MBOX_DEFAULT;
+                    }
+                } 
+                if (data != dataMap.end())  {
+                    continue;
+                }
+                else {
+                    break;
+                }
+            }
+
+            if (dataMap[begin+2] != SCE_MBOX_SUBJECT) {
+                for (Sci_Position i = begin; i <= end; i++) {
+                    if (stateMap.find(i) == stateMap.end()) {
+                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
+                    }
+                    else {
+                        stateMap[i] = SCE_MBOX_DEFAULT;
+                    }
+                } 
+                if (data != dataMap.end())  {
+                    continue;
+                }
+                else {
+                    break;
+                }
+            }
+
+            for (Sci_Position i = begin; i <= end; i++) {
+                if (stateMap.find(i) == stateMap.end()) {
+                    stateMap.insert(std::make_pair(i, dataMap[i])); 
+                }
+                else {
+                    stateMap[i] = dataMap[i];
+                }
+                if (data != dataMap.end())  {
+                    continue;
+                }
+                else {
+                    break;
+                }
+            } 
+
+        }
+    }
+}
+
 void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, int initStyle, IDocument *pAccess) {
     LexAccessor styler(pAccess);
-    StyleContext scCTX(startPos, lengthDoc, initStyle, styler);
-    Sci_Position currentLine = styler.GetLine(startPos) ;
+    // ne zaboravi da objasnis za 0
+    StyleContext scCTX(0, lengthDoc, initStyle, styler);
+    Sci_Position currentLine = styler.GetLine(0);
+
+    ProcessLines(startPos, styler);
+    ProcessStates();
     for (; scCTX.More() ; scCTX.Forward()) {
         if (scCTX.atLineStart) {
-            scCTX.SetState(SCE_MBOX_DEFAULT);
+            scCTX.SetState(stateMap[currentLine]);
         }
         if(scCTX.ch == '\n') {
             currentLine += 1;
             continue;
         }
         switch(scCTX.state) {
-            case SCE_MBOX_DEFAULT:
-                if (scCTX.atLineStart && IsFromLine(currentLine, styler)) {
-                    scCTX.SetState(SCE_MBOX_FROM_LINE);
-                    break;
-                }
-                if (scCTX.atLineStart && IsDateLine(currentLine, styler)) {
-                    scCTX.SetState(SCE_MBOX_DATE_LINE);
-                    break;
-                }
-                if (scCTX.atLineStart && IsSubjectLine(currentLine, styler)) {
-                    scCTX.SetState(SCE_MBOX_SUBJECT_LINE);
-                    break;
-                }
-                break;
-            case SCE_MBOX_FROM_LINE:
+            case SCE_MBOX_FROM:
                 if (scCTX.Match('m', ' ')) {
                     scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_FROM_TEXT);
-                }
-                if (scCTX.Match(' ', '\"')) {
-                    scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_FROM_QUOTED_TEXT);
+                    scCTX.SetState(SCE_MBOX_FROM_VALUE);
                 }
                 break;
-            case SCE_MBOX_FROM_TEXT:
-                if (scCTX.ch == ' ') {
-                    scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_FROM_TIME);
-                }
-                break;
-            case SCE_MBOX_FROM_QUOTED_TEXT:
-                if (scCTX.Match('\"', ' ')) {
-                    scCTX.Forward();
-                    scCTX.ForwardSetState(SCE_MBOX_FROM_TIME);
-                }
-                break;
-            case SCE_MBOX_FROM_TIME:
-                if (scCTX.atLineEnd) {
-                    scCTX.ForwardSetState(SCE_MBOX_DEFAULT);
-                }
-                break;
-            case SCE_MBOX_DATE_LINE:
+            case SCE_MBOX_DATE:
                 if (scCTX.Match(':', ' ')) {
                     scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_DATE_DATE);
+                    scCTX.SetState(SCE_MBOX_DATE_VALUE);
                 }
                 break;
-            case SCE_MBOX_DATE_DATE:
-                if (scCTX.atLineEnd) {
-                    scCTX.ForwardSetState(SCE_MBOX_DEFAULT);
-                }
-                break;
-            case SCE_MBOX_SUBJECT_LINE:
+            case SCE_MBOX_SUBJECT:
                 if (scCTX.Match(':', ' ')) {
                     scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_SUBJECT_TEXT);
-                }
-                break;
-            case SCE_MBOX_SUBJECT_TEXT:
-                if (scCTX.atLineEnd) {
-                    scCTX.ForwardSetState(SCE_MBOX_DEFAULT);
+                    scCTX.SetState(SCE_MBOX_SUBJECT_VALUE);
                 }
                 break;
         };
