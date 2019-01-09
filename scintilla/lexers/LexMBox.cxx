@@ -187,8 +187,10 @@ Sci_Position ProcessLines(Sci_PositionU startPos, Sci_PositionU lengthDoc, LexAc
     std::string lineBuffer;
     Sci_PositionU currentPos = startPos;
     Sci_Position currentLine = styler.GetLine(startPos);
+    Sci_PositionU endDoc = styler.Length();
 
-    while(currentPos < startPos+lengthDoc || dataMap[currentLine-1] != SCE_MBOX_FROM) {
+    while((currentPos < startPos+lengthDoc || dataMap[currentLine-1] != SCE_MBOX_FROM) && currentPos <= endDoc ) {
+
         char c = static_cast<char>(styler.SafeGetCharAt(currentPos++));
         
         lineBuffer += c;
@@ -341,7 +343,7 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
 
     Sci_Position startLine  = FindLastMBoxHeader(styler.GetLine(startPos));
     Sci_Position endLine = ProcessLines(startPos, lengthDoc , styler);;
-    //printf("%d %d\n", startLine, endLine);
+    printf("%d %d\n", startLine, endLine);
 
     StyleContext scCTX(styler.LineStart(startLine), styler.LineEnd(endLine)-styler.LineStart(startLine), initStyle, styler);
 
