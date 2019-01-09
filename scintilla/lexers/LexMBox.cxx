@@ -182,13 +182,13 @@ bool IsCustomKeywordLine(std::string line) {
     return std::regex_match(line, r);
 }
 
-void ProcessLines(Sci_PositionU startPos, LexAccessor &styler) {
+void ProcessLines(Sci_PositionU startPos, Sci_Position lengthDoc, LexAccessor &styler) {
 
     std::string lineBuffer;
-    Sci_Position currentPos = startPos;
-    Sci_Position endPos = styler.Length();
+    Sci_PositionU currentPos = startPos;
     Sci_Position currentLine = styler.GetLine(startPos);
-    while(currentPos < endPos) {
+
+    while(currentPos <= startPos+lengthDoc) {
         char c = static_cast<char>(styler.SafeGetCharAt(currentPos++));
         
         lineBuffer += c;
@@ -325,14 +325,35 @@ void ProcessStates(void) {
     }
 }
 
+Sci_Position FindLastValidMBoxHeader(Sci_Position currentLine) {
+
+    while(dataMap.find(currentLine) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_FROM) {
+        currentLine--;
+    }
+    return currentLine;
+}
+
+Sci_Position FindNextValidMBoxHeader(Sci_Position currentLine) {
+
+    while(dataMap.find(currentLine) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_FROM) {
+        currentLine++;
+    }
+    return currentLine;
+}
+
 void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, int initStyle, IDocument *pAccess) {
     LexAccessor styler(pAccess);
-    // ne zaboravi da objasnis za 0
-    StyleContext scCTX(0, lengthDoc, initStyle, styler);
-    Sci_Position currentLine = styler.GetLine(0);
 
-    ProcessLines(startPos, styler);
+    Sci_Position startLine  = FindLastValidMBoxHeader(styler.GetLine(startPos));
+    Sci_Position endLine = FindNextValidMBoxHeader(styler.GetLine(startPos+lengthDoc));
+
+    StyleContext scCTX(styler.LineStart(startLine), styler.LineEnd(endLine)-styler.LineStart(startLine), initStyle, styler);
+
+    ProcessLines(startPos, lengthDoc, styler);
     ProcessStates();
+
+    Sci_Position currentLine = startLine;
+
     for (; scCTX.More() ; scCTX.Forward()) {
         if (scCTX.atLineStart) {
             scCTX.SetState(stateMap[currentLine]);
