@@ -182,16 +182,17 @@ bool IsCustomKeywordLine(std::string line) {
     return std::regex_match(line, r);
 }
 
-void ProcessLines(Sci_PositionU startPos, Sci_Position lengthDoc, LexAccessor &styler) {
+Sci_Position ProcessLines(Sci_PositionU startPos, Sci_PositionU lengthDoc, LexAccessor &styler) {
 
     std::string lineBuffer;
     Sci_PositionU currentPos = startPos;
     Sci_Position currentLine = styler.GetLine(startPos);
 
-    while(currentPos <= startPos+lengthDoc) {
+    while(currentPos < startPos+lengthDoc || dataMap[currentLine-1] != SCE_MBOX_FROM) {
         char c = static_cast<char>(styler.SafeGetCharAt(currentPos++));
         
         lineBuffer += c;
+        //printf("%c", c);
 
         if (c == '\n') {
             
@@ -233,6 +234,8 @@ void ProcessLines(Sci_PositionU startPos, Sci_Position lengthDoc, LexAccessor &s
             currentLine++;
         } 
     }
+
+    return currentLine-1;
 
 }
 
@@ -325,7 +328,7 @@ void ProcessStates(void) {
     }
 }
 
-Sci_Position FindLastValidMBoxHeader(Sci_Position currentLine) {
+Sci_Position FindLastMBoxHeader(Sci_Position currentLine) {
 
     while(dataMap.find(currentLine) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_FROM) {
         currentLine--;
@@ -333,23 +336,15 @@ Sci_Position FindLastValidMBoxHeader(Sci_Position currentLine) {
     return currentLine;
 }
 
-Sci_Position FindNextValidMBoxHeader(Sci_Position currentLine) {
-
-    while(dataMap.find(currentLine) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_FROM) {
-        currentLine++;
-    }
-    return currentLine;
-}
-
 void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, int initStyle, IDocument *pAccess) {
     LexAccessor styler(pAccess);
 
-    Sci_Position startLine  = FindLastValidMBoxHeader(styler.GetLine(startPos));
-    Sci_Position endLine = FindNextValidMBoxHeader(styler.GetLine(startPos+lengthDoc));
+    Sci_Position startLine  = FindLastMBoxHeader(styler.GetLine(startPos));
+    Sci_Position endLine = ProcessLines(startPos, lengthDoc , styler);;
+    //printf("%d %d\n", startLine, endLine);
 
     StyleContext scCTX(styler.LineStart(startLine), styler.LineEnd(endLine)-styler.LineStart(startLine), initStyle, styler);
 
-    ProcessLines(startPos, lengthDoc, styler);
     ProcessStates();
 
     Sci_Position currentLine = startLine;
