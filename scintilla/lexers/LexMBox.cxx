@@ -157,22 +157,6 @@ bool IsFromLine(std::string line) {
     return std::regex_match(line, r);
 }
 
-bool IsDateLine(std::string line) {
-
-    std::string dateKeywordRegex("\\s*Date:\\s+");
-    std::string dateDateRegex("\\s*(0[1-9]|1[0-2])/([0-2][0-9]|3[0-1])/(\\d{2})\\s+([0-1][0-9]|2[0-4]):([0-5][0-9])\\s+(am|pm)\\s*");
-    std::regex r(dateKeywordRegex+dateDateRegex);
-    return std::regex_match(line, r);
-}
-
-bool IsSubjectLine(std::string line) {
-
-    std::string subjectKeywordRegex("\\s*Subject:\\s+");
-    std::string subjectTextRegex("\\s*.*?\\s*");
-
-    std::regex r(subjectKeywordRegex+subjectTextRegex);
-    return std::regex_match(line, r);
-}
 
 bool IsCustomKeywordLine(std::string line) {
 
@@ -206,21 +190,21 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
                     dataMap[currentLine] = SCE_MBOX_FROM;
                 }
             }
-            else if (lineBuffer.substr(0,5) == "Date:" && IsDateLine(lineBuffer)) {
+            else if (lineBuffer.find(':') != std::string::npos && IsCustomKeywordLine(lineBuffer)) {
                 
                 if (dataMap.find(currentLine) == dataMap.end()) {
-                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_DATE)); 
+                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_CUSTOM_KEYWORD)); 
                 }
                 else {
-                    dataMap[currentLine] = SCE_MBOX_DATE;
+                    dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD;
                 }
             }
-            else if (lineBuffer.substr(0,8) == "Subject:" && IsSubjectLine(lineBuffer)) {
+            else if (lineBuffer == "\n") {
                 if (dataMap.find(currentLine) == dataMap.end()) {
-                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_SUBJECT)); 
+                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_BLANK_LINE)); 
                 }
                 else {
-                    dataMap[currentLine] = SCE_MBOX_SUBJECT;
+                    dataMap[currentLine] = SCE_MBOX_BLANK_LINE;
                 }
             }
             else {
@@ -260,7 +244,7 @@ void ProcessStates(void) {
             }
             data--;
 
-            if (dataMap[begin] != SCE_MBOX_FROM) {
+            if (dataMap[begin] != SCE_MBOX_BLANK_LINE && begin != 0 ) {
                 for (Sci_Position i = begin; i <= end; i++) {
                     if (stateMap.find(i) == stateMap.end()) {
                         stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
@@ -277,7 +261,15 @@ void ProcessStates(void) {
                 }
             }
 
-            if (dataMap[begin+1] != SCE_MBOX_DATE) {
+            Sci_Position new_begin = begin;
+
+            if (dataMap[begin] == SCE_MBOX_BLANK_LINE) {
+                while (dataMap[new_begin] == SCE_MBOX_BLANK_LINE) {
+                    new_begin++;
+                }
+            }
+
+            if (dataMap[new_begin] != SCE_MBOX_FROM  ) {
                 for (Sci_Position i = begin; i <= end; i++) {
                     if (stateMap.find(i) == stateMap.end()) {
                         stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
@@ -294,7 +286,37 @@ void ProcessStates(void) {
                 }
             }
 
-            if (dataMap[begin+2] != SCE_MBOX_SUBJECT) {
+            if (dataMap[end] != SCE_MBOX_BLANK_LINE ) {
+                for (Sci_Position i = begin; i <= end; i++) {
+                    if (stateMap.find(i) == stateMap.end()) {
+                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
+                    }
+                    else {
+                        stateMap[i] = SCE_MBOX_DEFAULT;
+                    }
+                } 
+                if (data != dataMap.end())  {
+                    continue;
+                }
+                else {
+                    break;
+                }
+            }
+
+            Sci_Position new_end = end;
+            while (dataMap[new_end] == SCE_MBOX_BLANK_LINE) {
+                new_end--;
+            }
+
+            bool isAllKeywords = true;
+            for (Sci_Position i = new_begin+1; i <= new_end; i++) {
+                if (dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD) {
+                    isAllKeywords = false;
+                    break;
+                }
+            }
+
+            if (!isAllKeywords) {
                 for (Sci_Position i = begin; i <= end; i++) {
                     if (stateMap.find(i) == stateMap.end()) {
                         stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
@@ -367,16 +389,10 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
                     scCTX.SetState(SCE_MBOX_FROM_VALUE);
                 }
                 break;
-            case SCE_MBOX_DATE:
+            case SCE_MBOX_CUSTOM_KEYWORD:
                 if (scCTX.Match(':', ' ')) {
                     scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_DATE_VALUE);
-                }
-                break;
-            case SCE_MBOX_SUBJECT:
-                if (scCTX.Match(':', ' ')) {
-                    scCTX.Forward();
-                    scCTX.SetState(SCE_MBOX_SUBJECT_VALUE);
+                    scCTX.SetState(SCE_MBOX_CUSTOM_KEYWORD_VALUE);
                 }
                 break;
         };

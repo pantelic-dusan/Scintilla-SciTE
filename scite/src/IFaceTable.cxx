@@ -1295,16 +1295,13 @@ static IFaceConstant ifaceConstants[] = {
 	{"SCE_MAXIMA_STRING",4},
 	{"SCE_MAXIMA_UNKNOWN",7},
 	{"SCE_MAXIMA_VARIABLE",6},
-	{"SCE_MBOX_CUSTOM_KEYWORD",7},
-	{"SCE_MBOX_CUSTOM_KEYWORD_VALUE",8},
-	{"SCE_MBOX_DATE",3},
-	{"SCE_MBOX_DATE_VALUE",4},
+	{"SCE_MBOX_BLANK_LINE",5},
+	{"SCE_MBOX_CUSTOM_KEYWORD",3},
+	{"SCE_MBOX_CUSTOM_KEYWORD_VALUE",4},
 	{"SCE_MBOX_DEFAULT",0},
 	{"SCE_MBOX_FROM",1},
 	{"SCE_MBOX_FROM_VALUE",2},
-	{"SCE_MBOX_IDENTIFIER",9},
-	{"SCE_MBOX_SUBJECT",5},
-	{"SCE_MBOX_SUBJECT_VALUE",6},
+	{"SCE_MBOX_IDENTIFIER",6},
 	{"SCE_METAPOST_COMMAND",4},
 	{"SCE_METAPOST_DEFAULT",0},
 	{"SCE_METAPOST_EXTRA",6},
@@ -3422,7 +3419,7 @@ static IFaceProperty ifaceProperties[] = {
 
 enum {
 	ifaceFunctionCount = 307,
-	ifaceConstantCount = 2751,
+	ifaceConstantCount = 2748,
 	ifacePropertyCount = 230
 };
 
