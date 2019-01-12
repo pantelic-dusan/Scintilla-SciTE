@@ -158,6 +158,7 @@ bool IsFromLine(std::string line) {
     std::string fromSourceRegex("\\s*(\\S+|(\".*\")+)\\s*");
     std::string fromDateRegex("\\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+([0-2][1-9]|3[0-1])\\s*([0-1][0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])\\s*\\d{4}\\s*");
     std::regex r(fromKeywordRegex+fromSourceRegex+fromDateRegex);
+
     return std::regex_match(line, r);
 }
 
@@ -165,8 +166,8 @@ bool IsFromLine(std::string line) {
 bool IsCustomKeywordLine(std::string line) {
 
     std::string customKeywordRegex("^[A-Za-z]+:.*?\\s+");
-
     std::regex r(customKeywordRegex);
+
     return std::regex_match(line, r);
 }
 
@@ -225,7 +226,6 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
     }
 
     return currentLine-1;
-
 }
 
 // Process lines and states from dataMap and form stateMap wich is used for highlight
