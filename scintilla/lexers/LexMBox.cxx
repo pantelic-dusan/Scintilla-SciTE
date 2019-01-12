@@ -32,9 +32,13 @@ static const char *const MBoxWordlistDesc[] = {
     0
 };
 
+// Map of real line states 
 std::map<Sci_Position, char> dataMap;
+
+// Map of line states when processed, this is used for highlight
 std::map<Sci_Position, char> stateMap;
 
+// Initializing Lexer class
 class LexerMBox : public ILexer4 {
 public:
     LexerMBox() {
@@ -147,7 +151,7 @@ public:
 
 };
 
-
+// Checks with regex if string is in valid format for FROM line
 bool IsFromLine(std::string line) {
 
     std::string fromKeywordRegex("\\s*From\\s+");
@@ -157,7 +161,7 @@ bool IsFromLine(std::string line) {
     return std::regex_match(line, r);
 }
 
-
+// Checks with regex if string is valid custom keyword line in format <keyword>: <value>
 bool IsCustomKeywordLine(std::string line) {
 
     std::string customKeywordRegex("^[A-Za-z]+:.*?\\s+");
@@ -166,6 +170,7 @@ bool IsCustomKeywordLine(std::string line) {
     return std::regex_match(line, r);
 }
 
+// Process text and for each line add state in dataMap 
 Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAccessor &styler) {
 
     std::string lineBuffer;
@@ -176,9 +181,7 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
     while((currentPos < startPos+lengthDoc || dataMap[currentLine-1] != SCE_MBOX_FROM) && currentPos <= endDoc ) {
 
         char c = static_cast<char>(styler.SafeGetCharAt(currentPos++));
-        
         lineBuffer += c;
-        //printf("%c", c);
 
         if (c == '\n') {
             
@@ -225,7 +228,9 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
 
 }
 
+// Process lines and states from dataMap and form stateMap wich is used for highlight
 void ProcessStates(void) {
+
     for (auto data = dataMap.begin(); data != dataMap.end(); data++) {
 
         if (stateMap.find(data->first) == stateMap.end()) {
@@ -352,9 +357,10 @@ void ProcessStates(void) {
     }
 }
 
+// Finds position of last valid MBox header from currentLine
 Sci_Position FindLastMBoxHeader(Sci_Position currentLine) {
 
-    // currentLine - 1 for not geting negative value if 0 line isn't from
+    // currentLine - 1 for disable geting negative value if 0 line isn't from
     while(dataMap.find(currentLine-1) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_FROM) {
         currentLine--;
     }
@@ -362,7 +368,9 @@ Sci_Position FindLastMBoxHeader(Sci_Position currentLine) {
     return currentLine;
 }
 
+// Set states for characters
 void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, int initStyle, IDocument *pAccess) {
+    
     LexAccessor styler(pAccess);
 
     Sci_Position startLine  = FindLastMBoxHeader(styler.GetLine(startPos));
