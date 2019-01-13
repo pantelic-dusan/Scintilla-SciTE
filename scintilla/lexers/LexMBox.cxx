@@ -396,7 +396,6 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
     for (; scCTX.More() ; scCTX.Forward()) {
         if (scCTX.atLineStart) {
             scCTX.SetState(stateMap[currentLine]);
-            printf("%d %d %d\n", currentLine, stateMap[currentLine], dataMap[currentLine]);
         }
         if(scCTX.ch == '\n') {
             currentLine += 1;
