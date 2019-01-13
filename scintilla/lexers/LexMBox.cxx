@@ -38,6 +38,12 @@ std::map<Sci_Position, char> dataMap;
 // Map of line states when processed, this is used for highlight
 std::map<Sci_Position, char> stateMap;
 
+// Great performance emprovement when declaring regex only once
+std::regex customKeywordRegex("^\\S+:.*?\\s+");
+std::regex fromKeywordRegex("From\\s+(\\S+|(\".*\")+)\\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+([0-2][1-9]|3[0-1])\\s+([0-1][0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])\\s+\\d{4}\\s*");
+std::regex customKeywordValueAcrossLines("^\\s+\\S+.*?\\s*");
+
+
 // Initializing Lexer class
 class LexerMBox : public ILexer4 {
 public:
@@ -154,21 +160,18 @@ public:
 // Checks with regex if string is in valid format for FROM line
 bool IsFromLine(std::string line) {
 
-    std::string fromKeywordRegex("\\s*From\\s+");
-    std::string fromSourceRegex("\\s*(\\S+|(\".*\")+)\\s*");
-    std::string fromDateRegex("\\s*(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+([0-2][1-9]|3[0-1])\\s*([0-1][0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])\\s*\\d{4}\\s*");
-    std::regex r(fromKeywordRegex+fromSourceRegex+fromDateRegex);
-
-    return std::regex_match(line, r);
+    return std::regex_match(line, fromKeywordRegex);
 }
 
 // Checks with regex if string is valid custom keyword line in format <keyword>: <value>
 bool IsCustomKeywordLine(std::string line) {
 
-    std::string customKeywordRegex("^[A-Za-z]+:.*?\\s+");
-    std::regex r(customKeywordRegex);
+    return std::regex_match(line, customKeywordRegex);
+}
 
-    return std::regex_match(line, r);
+bool IsCustomKeywordValueAcrossLine(std::string line) {
+
+    return std::regex_match(line, customKeywordValueAcrossLines);
 }
 
 // Process text and for each line add state in dataMap 
@@ -203,12 +206,20 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
                     dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD;
                 }
             }
-            else if (lineBuffer == "\n") {
+            else if (lineBuffer == "\n" || lineBuffer == "\r\n") {
                 if (dataMap.find(currentLine) == dataMap.end()) {
                     dataMap.insert(std::make_pair(currentLine, SCE_MBOX_BLANK_LINE)); 
                 }
                 else {
                     dataMap[currentLine] = SCE_MBOX_BLANK_LINE;
+                }
+            }
+            else if (dataMap.find(currentLine-1) != dataMap.end() && (dataMap[currentLine-1] == SCE_MBOX_CUSTOM_KEYWORD || dataMap[currentLine-1] == SCE_MBOX_CUSTOM_KEYWORD_VALUE) && IsCustomKeywordValueAcrossLine(lineBuffer)) {
+                if (dataMap.find(currentLine) == dataMap.end()) {
+                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_CUSTOM_KEYWORD_VALUE)); 
+                }
+                else {
+                    dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD_VALUE;
                 }
             }
             else {
@@ -315,7 +326,7 @@ void ProcessStates(void) {
 
             bool isAllKeywords = true;
             for (Sci_Position i = new_begin+1; i <= new_end; i++) {
-                if (dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD) {
+                if (dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD && dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD_VALUE) {
                     isAllKeywords = false;
                     break;
                 }
@@ -374,7 +385,7 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
     LexAccessor styler(pAccess);
 
     Sci_Position startLine  = FindLastMBoxHeader(styler.GetLine(startPos));
-    Sci_Position endLine = ProcessLines(startPos, lengthDoc , styler);;
+    Sci_Position endLine = ProcessLines(startPos, lengthDoc , styler);
     
     StyleContext scCTX(styler.LineStart(startLine), styler.LineEnd(endLine)-styler.LineStart(startLine), initStyle, styler);
 
@@ -385,6 +396,7 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
     for (; scCTX.More() ; scCTX.Forward()) {
         if (scCTX.atLineStart) {
             scCTX.SetState(stateMap[currentLine]);
+            printf("%d %d %d\n", currentLine, stateMap[currentLine], dataMap[currentLine]);
         }
         if(scCTX.ch == '\n') {
             currentLine += 1;
