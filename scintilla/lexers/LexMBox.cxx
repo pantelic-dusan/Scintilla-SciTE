@@ -218,76 +218,54 @@ void ProcessStates(void) {
 
     for (auto data = dataMap.begin(); data != dataMap.end(); data++) {
 
-        stateMap[data->first] = data->second;
-
-        if (data->second != SCE_MBOX_DEFAULT) {
-            Sci_Position begin = data->first;
-            Sci_Position end = data->first;
-            while (data != dataMap.end() && data->second != SCE_MBOX_DEFAULT) {
-                end = data->first;
+        stateMap[data->first] = SCE_MBOX_DEFAULT;
+        
+        if (data->first != 0) {
+            if (data->second != SCE_MBOX_BLANK_LINE) {
+                continue;
+            }
+            else {
                 data++;
             }
-            data--;
-
-            if (dataMap[begin] != SCE_MBOX_BLANK_LINE && begin != 0 ) {
-                for (Sci_Position i = begin; i <= end; i++) {
-                    stateMap[i] = SCE_MBOX_DEFAULT;
-                } 
-                
-                continue;
-            }
-
-            Sci_Position new_begin = begin;
-
-            if (dataMap[begin] == SCE_MBOX_BLANK_LINE) {
-                while (dataMap[new_begin] == SCE_MBOX_BLANK_LINE) {
-                    new_begin++;
-                }
-            }
-
-            if (dataMap[new_begin] != SCE_MBOX_FROM) {
-                for (Sci_Position i = begin; i <= end; i++) {
-                    stateMap[i] = SCE_MBOX_DEFAULT;
-                } 
-                
-                continue;
-            }
-
-            if (dataMap[end] != SCE_MBOX_BLANK_LINE ) {
-                for (Sci_Position i = begin; i <= end; i++) {
-                    stateMap[i] = SCE_MBOX_DEFAULT;
-                } 
-                
-                continue;
-            }
-
-            Sci_Position new_end = end;
-            while (dataMap[new_end] == SCE_MBOX_BLANK_LINE) {
-                new_end--;
-            }
-
-            bool isAllKeywords = true;
-            for (Sci_Position i = new_begin+1; i <= new_end; i++) {
-                if (dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD && dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD_VALUE) {
-                    isAllKeywords = false;
-                    break;
-                }
-            }
-
-            if (!isAllKeywords) {
-                for (Sci_Position i = begin; i <= end; i++) {
-                    stateMap[i] = SCE_MBOX_DEFAULT;
-                } 
-                
-                continue;
-            }
-
-            for (Sci_Position i = begin; i <= end; i++) {
-                stateMap[i] = dataMap[i];
-            } 
-
         }
+
+        Sci_Position begin = data->first;
+        Sci_Position end = data->first;
+        while (data != dataMap.end() && data->second != SCE_MBOX_BLANK_LINE) {
+            end = data->first;
+            data++;
+        }
+        data--;
+        
+        if (dataMap[begin] != SCE_MBOX_FROM) {
+            for (Sci_Position i = begin; i <= end; i++) {
+                stateMap[i] = SCE_MBOX_DEFAULT;
+            }
+            continue;
+        }
+
+        bool isAllKeywords = true;
+        for (Sci_Position i = begin+1; i <= end; i++) {
+            if (dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD && dataMap[i] != SCE_MBOX_CUSTOM_KEYWORD_VALUE) {
+                isAllKeywords = false;
+                break;
+            }
+        }
+
+        if (!isAllKeywords) {
+            for (Sci_Position i = begin; i <= end; i++) {
+                stateMap[i] = SCE_MBOX_DEFAULT;
+            }
+            continue;
+        }
+
+        for (Sci_Position i = begin; i <= end; i++) {
+            stateMap[i] = dataMap[i];
+        } 
+
     }
+
+        
 }
 
 // Finds position of last valid MBox header from currentLine
