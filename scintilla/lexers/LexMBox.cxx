@@ -190,45 +190,19 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
         if (c == '\n') {
             
             if (lineBuffer.substr(0,5) == "From " && IsFromLine(lineBuffer)) {
-                if (dataMap.find(currentLine) == dataMap.end()) {
-                        dataMap.insert(std::make_pair(currentLine, SCE_MBOX_FROM)); 
-                }
-                else {
-                    dataMap[currentLine] = SCE_MBOX_FROM;
-                }
+                dataMap[currentLine] = SCE_MBOX_FROM;
             }
             else if (lineBuffer.find(':') != std::string::npos && IsCustomKeywordLine(lineBuffer)) {
-                
-                if (dataMap.find(currentLine) == dataMap.end()) {
-                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_CUSTOM_KEYWORD)); 
-                }
-                else {
-                    dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD;
-                }
+                dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD;
             }
             else if (lineBuffer == "\n" || lineBuffer == "\r\n") {
-                if (dataMap.find(currentLine) == dataMap.end()) {
-                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_BLANK_LINE)); 
-                }
-                else {
-                    dataMap[currentLine] = SCE_MBOX_BLANK_LINE;
-                }
+                dataMap[currentLine] = SCE_MBOX_BLANK_LINE;
             }
             else if (dataMap.find(currentLine-1) != dataMap.end() && (dataMap[currentLine-1] == SCE_MBOX_CUSTOM_KEYWORD || dataMap[currentLine-1] == SCE_MBOX_CUSTOM_KEYWORD_VALUE) && IsCustomKeywordValueAcrossLine(lineBuffer)) {
-                if (dataMap.find(currentLine) == dataMap.end()) {
-                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_CUSTOM_KEYWORD_VALUE)); 
-                }
-                else {
-                    dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD_VALUE;
-                }
+                dataMap[currentLine] = SCE_MBOX_CUSTOM_KEYWORD_VALUE;
             }
             else {
-                if (dataMap.find(currentLine) == dataMap.end()) {
-                    dataMap.insert(std::make_pair(currentLine, SCE_MBOX_DEFAULT)); 
-                }
-                else {
                     dataMap[currentLine] = SCE_MBOX_DEFAULT;
-                }
             }
 
             lineBuffer.clear();
@@ -244,12 +218,7 @@ void ProcessStates(void) {
 
     for (auto data = dataMap.begin(); data != dataMap.end(); data++) {
 
-        if (stateMap.find(data->first) == stateMap.end()) {
-            stateMap.insert(std::make_pair(data->first, data->second)); 
-        }
-        else {
-            stateMap[data->first] = data->second;
-        }
+        stateMap[data->first] = data->second;
 
         if (data->second != SCE_MBOX_DEFAULT) {
             Sci_Position begin = data->first;
@@ -262,19 +231,10 @@ void ProcessStates(void) {
 
             if (dataMap[begin] != SCE_MBOX_BLANK_LINE && begin != 0 ) {
                 for (Sci_Position i = begin; i <= end; i++) {
-                    if (stateMap.find(i) == stateMap.end()) {
-                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
-                    }
-                    else {
-                        stateMap[i] = SCE_MBOX_DEFAULT;
-                    }
+                    stateMap[i] = SCE_MBOX_DEFAULT;
                 } 
-                if (data != dataMap.end())  {
-                    continue;
-                }
-                else {
-                    break;
-                }
+                
+                continue;
             }
 
             Sci_Position new_begin = begin;
@@ -285,38 +245,20 @@ void ProcessStates(void) {
                 }
             }
 
-            if (dataMap[new_begin] != SCE_MBOX_FROM  ) {
+            if (dataMap[new_begin] != SCE_MBOX_FROM) {
                 for (Sci_Position i = begin; i <= end; i++) {
-                    if (stateMap.find(i) == stateMap.end()) {
-                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
-                    }
-                    else {
-                        stateMap[i] = SCE_MBOX_DEFAULT;
-                    }
+                    stateMap[i] = SCE_MBOX_DEFAULT;
                 } 
-                if (data != dataMap.end())  {
-                    continue;
-                }
-                else {
-                    break;
-                }
+                
+                continue;
             }
 
             if (dataMap[end] != SCE_MBOX_BLANK_LINE ) {
                 for (Sci_Position i = begin; i <= end; i++) {
-                    if (stateMap.find(i) == stateMap.end()) {
-                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
-                    }
-                    else {
-                        stateMap[i] = SCE_MBOX_DEFAULT;
-                    }
+                    stateMap[i] = SCE_MBOX_DEFAULT;
                 } 
-                if (data != dataMap.end())  {
-                    continue;
-                }
-                else {
-                    break;
-                }
+                
+                continue;
             }
 
             Sci_Position new_end = end;
@@ -334,34 +276,14 @@ void ProcessStates(void) {
 
             if (!isAllKeywords) {
                 for (Sci_Position i = begin; i <= end; i++) {
-                    if (stateMap.find(i) == stateMap.end()) {
-                        stateMap.insert(std::make_pair(i, SCE_MBOX_DEFAULT)); 
-                    }
-                    else {
-                        stateMap[i] = SCE_MBOX_DEFAULT;
-                    }
+                    stateMap[i] = SCE_MBOX_DEFAULT;
                 } 
-                if (data != dataMap.end())  {
-                    continue;
-                }
-                else {
-                    break;
-                }
+                
+                continue;
             }
 
             for (Sci_Position i = begin; i <= end; i++) {
-                if (stateMap.find(i) == stateMap.end()) {
-                    stateMap.insert(std::make_pair(i, dataMap[i])); 
-                }
-                else {
-                    stateMap[i] = dataMap[i];
-                }
-                if (data != dataMap.end())  {
-                    continue;
-                }
-                else {
-                    break;
-                }
+                stateMap[i] = dataMap[i];
             } 
 
         }
