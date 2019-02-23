@@ -321,6 +321,24 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
 }
 
 void SCI_METHOD LexerMBox::Fold(Sci_PositionU startPos, Sci_Position lengthDoc, int initStyle, IDocument *pAccess) {
+    
+    LexAccessor styler(pAccess);
+    int baseLevel = styler.LevelAt(stateMap.begin()->first) & SC_FOLDLEVELNUMBERMASK;
+
+    for (auto line = stateMap.begin(); line != stateMap.end(); line++) {
+        if (line->second == SCE_MBOX_FROM) {
+            styler.SetLevel(line->first, baseLevel|SC_FOLDLEVELHEADERFLAG);
+        }
+        else {
+            auto lookahead = next(line);
+            if (lookahead != stateMap.end() && lookahead->second == SCE_MBOX_FROM) {
+                styler.SetLevel(line->first, baseLevel);
+            }
+            else {
+                styler.SetLevel(line->first, baseLevel+1);
+            }
+        }
+    }
 
 }
 
