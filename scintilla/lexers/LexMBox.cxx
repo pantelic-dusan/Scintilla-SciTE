@@ -40,7 +40,7 @@ std::map<Sci_Position, char> stateMap;
 
 // Great performance emprovement when declaring regex only once
 std::regex customKeywordRegex("^\\S+:.*?\\s+");
-std::regex fromKeywordRegex("From\\s+(\\S+|(\".*\")+)\\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+(0[1-9]|[1-2][0-9]|3[0-1])\\s+([0-1][0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])\\s+\\d{4}\\s*");
+std::regex fromKeywordRegex("From\\s+(\\S+|(\".*\")+)\\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+([1-9]|0[1-9]|[1-2][0-9]|3[0-1])\\s+([0-1][0-9]|2[0-4]):([0-5][0-9]):([0-5][0-9])\\s+\\d{4}\\s*");
 std::regex customKeywordValueAcrossLines("^\\s+\\S+.*?\\s*");
 
 
@@ -214,9 +214,9 @@ Sci_Position ProcessLines(Sci_Position startPos, Sci_Position lengthDoc, LexAcce
 }
 
 // Process lines and states from dataMap and form stateMap wich is used for highlight
-void ProcessStates(void) {
+void ProcessStates(Sci_Position startLine, Sci_Position endLine) {
 
-    for (auto data = dataMap.begin(); data != dataMap.end(); data++) {
+    for (auto data = dataMap.find(startLine); data->first <= endLine; data++) {
 
         stateMap[data->first] = SCE_MBOX_DEFAULT;
         
@@ -224,9 +224,10 @@ void ProcessStates(void) {
             if (data->second != SCE_MBOX_BLANK_LINE) {
                 continue;
             }
-            else {
-                data++;
-            }
+        }
+
+        while (data->second == SCE_MBOX_BLANK_LINE) {
+            data++;
         }
 
         Sci_Position begin = data->first;
@@ -265,14 +266,13 @@ void ProcessStates(void) {
 
     }
 
-        
 }
 
 // Finds position of last valid MBox header from currentLine
 Sci_Position FindLastMBoxHeader(Sci_Position currentLine) {
 
     // currentLine - 1 for disable geting negative value if 0 line isn't from
-    while(dataMap.find(currentLine-1) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_FROM) {
+    while(dataMap.find(currentLine-1) != dataMap.end() && dataMap[currentLine] != SCE_MBOX_BLANK_LINE ) {
         currentLine--;
     }
 
@@ -289,7 +289,7 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
     
     StyleContext scCTX(styler.LineStart(startLine), styler.LineEnd(endLine)-styler.LineStart(startLine), initStyle, styler);
 
-    ProcessStates();
+    ProcessStates(startLine, endLine);
 
     Sci_Position currentLine = startLine;
 
@@ -343,4 +343,3 @@ void SCI_METHOD LexerMBox::Fold(Sci_PositionU startPos, Sci_Position lengthDoc, 
 }
 
 LexerModule lmMBox(SCLEX_MBOX, LexerMBox::LexerFactoryMBox, "mbox", MBoxWordlistDesc);
-
