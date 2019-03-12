@@ -312,7 +312,7 @@ void SCI_METHOD LexerMBox::Lex(Sci_PositionU startPos, Sci_Position lengthDoc, i
     ProcessStates(startLine, endLine, pAccess);
 
     Sci_Position currentLine = startLine;
-    printf("[!] %d -> %d    %d -> %d\n", startLine, endLine, documentDataMap[pAccess][startLine], documentStateMap[pAccess][startLine]);
+    
     for (; scCTX.More() ; scCTX.Forward()) {
         if (scCTX.atLineStart) {
             scCTX.SetState(documentStateMap[pAccess][currentLine]);
