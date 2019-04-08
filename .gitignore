@@ -42,3 +42,4 @@ BuildLog.htm
 cov-int
 .vs
 .vscode
+.hg*
